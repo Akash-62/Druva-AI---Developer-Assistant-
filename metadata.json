@@ -1,0 +1,5 @@
+{
+  "name": "Druva AI Chat",
+  "description": "A modern, production-ready, ChatGPT-style responsive UI for AI chat interactions. Features a collapsible sidebar, main chat area, settings panel, and a fixed input bar, with both light and dark modes.",
+  "requestFramePermissions": []
+}
