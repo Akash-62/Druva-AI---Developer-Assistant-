@@ -1,13 +1,13 @@
 <div align="center">
 
-# 🤖 Druva AI Chat
+# 🤖 Druva AI Developer Assistant
 
 <img src="https://img.shields.io/badge/React-19.2.0-blue?logo=react" alt="React">
 <img src="https://img.shields.io/badge/TypeScript-5.8-blue?logo=typescript" alt="TypeScript">
 <img src="https://img.shields.io/badge/Vite-6.2-purple?logo=vite" alt="Vite">
 <img src="https://img.shields.io/badge/Tailwind-3.4-cyan?logo=tailwindcss" alt="Tailwind">
 
-**A modern, responsive ChatGPT clone powered by Groq AI**
+**A modern, responsive AI chat interface for developers.**
 
 [Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Usage](#-usage) • [Contributing](#-contributing)
 
@@ -65,7 +65,6 @@ Optimized responsive layout with collapsible panels.
 
 - **Node.js** (v18 or higher)
 - **npm** or **yarn**
-- **Groq API Key** (free at [console.groq.com](https://console.groq.com))
 
 ---
 
