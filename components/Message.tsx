@@ -48,7 +48,7 @@ const CodeBlock: React.FC<{
   }
 
   return (
-    <div className="my-4 rounded-lg overflow-hidden border border-border-color">
+    <div className="my-4 rounded-lg overflow-hidden border border-border-color bg-surface">
       <div className="flex items-center justify-between px-4 py-2 bg-surface-hover border-b border-border-color">
         <span className="text-xs font-semibold text-muted">{language || 'code'}</span>
         <button
@@ -60,22 +60,36 @@ const CodeBlock: React.FC<{
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <SyntaxHighlighter
-        language={language || 'text'}
-        style={isDark ? oneDark : oneLight}
-        customStyle={{
-          margin: 0,
-          padding: '1rem',
-          background: isDark ? '#1e1e1e' : '#fafafa',
-          fontSize: '0.875rem',
-          lineHeight: '1.5',
+      <div
+        className="overflow-x-auto w-full"
+        style={{
+          maxWidth: '100%',
+          WebkitOverflowScrolling: 'touch',
+          display: 'block'
         }}
-        showLineNumbers={true}
-        wrapLines={true}
-        {...props}
       >
-        {codeString}
-      </SyntaxHighlighter>
+        <SyntaxHighlighter
+          language={language || 'text'}
+          style={isDark ? oneDark : oneLight}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            background: isDark ? '#1e1e1e' : '#fafafa',
+            fontSize: '0.875rem',
+            lineHeight: '1.5',
+            whiteSpace: 'pre',     // Crucial for scrolling
+            overflowX: 'auto',     // Crucial for scrolling
+            wordBreak: 'normal',   // Crucial for scrolling
+            overflowWrap: 'normal' // Crucial for scrolling
+          }}
+          showLineNumbers={true}
+          wrapLines={false}        // Crucial for scrolling
+          wrapLongLines={false}    // Crucial for scrolling
+          {...props}
+        >
+          {codeString}
+        </SyntaxHighlighter>
+      </div>
     </div>
   );
 };
