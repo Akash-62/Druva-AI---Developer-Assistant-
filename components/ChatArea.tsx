@@ -12,6 +12,7 @@ interface ChatAreaProps {
   onSetEditingMessageId: (id: string | null) => void;
   onSaveEdit: (id: string, newContent: string) => void;
   onRegenerate: (id: string) => void;
+  onStopGenerating: () => void;
 }
 
 const WelcomeScreen: React.FC = () => (
@@ -22,50 +23,63 @@ const WelcomeScreen: React.FC = () => (
   </div>
 );
 
-const TypingIndicator: React.FC = () => (
-    <div className="flex items-start gap-4 max-w-4xl mx-auto">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-surface">
-            <ArcReactorLogo className="w-6 h-6 text-cyan-accent animate-thinking-pulse" />
-        </div>
-        <div className="p-4 rounded-xl max-w-[80%] bg-surface text-text-secondary">
-            <div className="flex items-center justify-center gap-1.5 h-6">
-                <span className="h-2 w-2 bg-muted rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                <span className="h-2 w-2 bg-muted rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                <span className="h-2 w-2 bg-muted rounded-full animate-bounce"></span>
-            </div>
-        </div>
+const ThinkingIndicator: React.FC = () => (
+  <div className="flex items-center gap-3 px-4 py-4 animate-fadeIn">
+    <div className="relative flex items-center justify-center">
+      <div className="w-4 h-4 border-2 border-cyan-accent/30 border-t-cyan-accent rounded-full animate-spin"></div>
+      <div className="absolute inset-0 bg-cyan-accent/10 blur-sm rounded-full"></div>
     </div>
+    <span className="text-sm font-medium text-text-secondary animate-pulse">Just a sec...</span>
+  </div>
+);
+
+const TypingIndicator: React.FC = () => (
+  <div className="flex items-start gap-3 sm:gap-4 w-full max-w-3xl mx-auto px-4 py-3 animate-fadeIn">
+    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-surface border border-border-color">
+      <ArcReactorLogo className="w-5 h-5 text-cyan-accent animate-spin-slow" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1.5">
+        <span className="h-2 w-2 bg-muted rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+        <span className="h-2 w-2 bg-muted rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+        <span className="h-2 w-2 bg-muted rounded-full animate-bounce"></span>
+      </div>
+    </div>
+  </div>
 );
 
 
-export const ChatArea: React.FC<ChatAreaProps> = ({ 
-    messages, 
-    isLoading, 
-    onSendMessage,
-    editingMessageId,
-    onSetEditingMessageId,
-    onSaveEdit,
-    onRegenerate
+export const ChatArea: React.FC<ChatAreaProps> = ({
+  messages,
+  isLoading,
+  onSendMessage,
+  editingMessageId,
+  onSetEditingMessageId,
+  onSaveEdit,
+  onRegenerate,
+  onStopGenerating
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{file: File, content: string, status: 'processing' | 'ready' | 'error'}>>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ file: File, content: string, status: 'processing' | 'ready' | 'error' }>>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract text from file
   const extractTextFromFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = async (e) => {
         try {
           const content = e.target?.result;
-          
+
           if (!content) {
             reject(new Error('Failed to read file content'));
             return;
           }
-          
+
           if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
             // Handle text files
             resolve(content as string);
@@ -88,9 +102,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           reject(error);
         }
       };
-      
+
       reader.onerror = () => reject(new Error('Failed to read file'));
-      
+
       // Use readAsText for text files, readAsDataURL for others
       if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
         reader.readAsText(file);
@@ -106,28 +120,28 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     const lowerText = text.toLowerCase();
     const timeKeywords = ['time', 'clock', 'what time', "what's the time"];
     const dateKeywords = ['date', 'today', 'what day', 'what date', 'calendar'];
-    
+
     const isTimeQuery = timeKeywords.some(keyword => lowerText.includes(keyword));
     const isDateQuery = dateKeywords.some(keyword => lowerText.includes(keyword));
-    
+
     let message = text;
-    
+
     // Add date/time context
     if (isTimeQuery || isDateQuery) {
       const now = new Date();
-      const time = now.toLocaleTimeString('en-IN', { 
-        hour: '2-digit', 
+      const time = now.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: true 
+        hour12: true
       });
-      const date = now.toLocaleDateString('en-IN', { 
+      const date = now.toLocaleDateString('en-IN', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-      
+
       if (isTimeQuery && isDateQuery) {
         message += `\n\n[Current Date & Time: ${date}, ${time} IST (GMT+5:30)]`;
       } else if (isTimeQuery) {
@@ -136,7 +150,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         message += `\n\n[Current Date: ${date}]`;
       }
     }
-    
+
     // Add document context if files are uploaded
     if (uploadedFiles.length > 0) {
       const readyFiles = uploadedFiles.filter(f => f.status === 'ready');
@@ -148,9 +162,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         message += '\n--- End of Documents ---\n\nPlease analyze the above documents and respond to my question.';
       }
     }
-    
+
     onSendMessage(message);
-    
+
     // Clear uploaded files after sending
     if (uploadedFiles.length > 0) {
       setUploadedFiles([]);
@@ -159,11 +173,11 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files) return;
-    
+
     const validTypes = [
-      'application/pdf', 
-      'text/plain', 
-      'application/msword', 
+      'application/pdf',
+      'text/plain',
+      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'image/png',
       'image/jpeg',
@@ -171,26 +185,26 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       'image/gif',
       'image/webp'
     ];
-    
+
     for (const file of Array.from(files)) {
       if (validTypes.includes(file.type) || file.name.endsWith('.txt')) {
         // Add file with processing status
         setUploadedFiles(prev => [...prev, { file, content: '', status: 'processing' }]);
-        
+
         try {
           const content = await extractTextFromFile(file);
-          setUploadedFiles(prev => 
-            prev.map(item => 
-              item.file === file 
+          setUploadedFiles(prev =>
+            prev.map(item =>
+              item.file === file
                 ? { ...item, content, status: 'ready' as const }
                 : item
             )
           );
         } catch (error) {
           console.error('Error processing file:', error);
-          setUploadedFiles(prev => 
-            prev.map(item => 
-              item.file === file 
+          setUploadedFiles(prev =>
+            prev.map(item =>
+              item.file === file
                 ? { ...item, status: 'error' as const }
                 : item
             )
@@ -220,35 +234,68 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     handleFileUpload(e.dataTransfer.files);
   };
 
+  // Handle keyboard visibility for mobile (input stays above keyboard)
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined' && window.visualViewport) {
+        const viewport = window.visualViewport;
+        const keyboardOffset = window.innerHeight - viewport.height;
+        setKeyboardHeight(keyboardOffset > 0 ? keyboardOffset : 0);
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    }
+  }, []);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isThinking]);
+
+  // Show thinking indicator before response starts
+  useEffect(() => {
+    if (isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user') {
+      setIsThinking(true);
+      const timer = setTimeout(() => setIsThinking(false), 800);
+      return () => clearTimeout(timer);
+    } else {
+      setIsThinking(false);
+    }
+  }, [isLoading, messages]);
 
   const renderMessages = () => (
     <>
       {messages.map((msg) => (
-        <Message 
-          key={msg.id} 
+        <Message
+          key={msg.id}
           message={msg}
           isEditing={editingMessageId === msg.id}
-          onSetEditing={() => onSetEditingMessageId(msg.id)}
-          onCancelEditing={() => onSetEditingMessageId(null)}
+          onSetEditing={onSetEditingMessageId}
           onSaveEdit={onSaveEdit}
           onRegenerate={onRegenerate}
           isOtherMessageEditing={editingMessageId !== null && editingMessageId !== msg.id}
-         />
+        />
       ))}
-      {isLoading && (!messages.length || messages[messages.length-1].role === 'user') && (
-         <TypingIndicator />
+      {isThinking && <ThinkingIndicator />}
+      {isLoading && !isThinking && (!messages.length || messages[messages.length - 1].role === 'user') && (
+        <TypingIndicator />
       )}
     </>
   );
 
   return (
-    <div className="flex flex-col h-full" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+    <div
+      className="flex flex-col h-full"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      style={{ paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0' }}
+    >
       {/* Drag and Drop Overlay */}
       {isDragging && (
         <div className="absolute inset-0 z-50 bg-cyan-accent/20 backdrop-blur-sm flex items-center justify-center">
@@ -260,11 +307,27 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
-        {messages.length === 0 && !isLoading ? <WelcomeScreen /> : renderMessages()}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollBehavior: 'smooth'
+        }}
+      >
+        <div className="py-4 space-y-2">
+          {messages.length === 0 && !isLoading ? <WelcomeScreen /> : renderMessages()}
+        </div>
       </div>
-      
-      <div className="p-3 sm:p-4 md:p-6 border-t border-border-color bg-bkg">
+
+      <div
+        className="px-3 py-3 sm:p-4 border-t border-border-color bg-bkg safe-area-bottom"
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 10,
+        }}
+      >
         {/* Uploaded Files Display */}
         {uploadedFiles.length > 0 && (
           <div className="mb-3">
@@ -274,19 +337,17 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             </div>
             <div className="flex flex-wrap gap-2">
               {uploadedFiles.map((fileData, index) => (
-                <div 
-                  key={index} 
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                    fileData.status === 'ready' ? 'bg-green-500/10 border-green-500/30' :
+                <div
+                  key={index}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${fileData.status === 'ready' ? 'bg-green-500/10 border-green-500/30' :
                     fileData.status === 'processing' ? 'bg-cyan-500/10 border-cyan-500/30 animate-pulse' :
-                    'bg-red-500/10 border-red-500/30'
-                  }`}
+                      'bg-red-500/10 border-red-500/30'
+                    }`}
                 >
-                  <DocumentIcon className={`w-4 h-4 ${
-                    fileData.status === 'ready' ? 'text-green-500' :
+                  <DocumentIcon className={`w-4 h-4 ${fileData.status === 'ready' ? 'text-green-500' :
                     fileData.status === 'processing' ? 'text-cyan-accent' :
-                    'text-red-500'
-                  }`} />
+                      'text-red-500'
+                    }`} />
                   <div className="flex flex-col min-w-0">
                     <span className="text-xs font-medium truncate max-w-[150px]">{fileData.file.name}</span>
                     <span className="text-[10px] text-muted">
@@ -313,7 +374,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             )}
           </div>
         )}
-        
+
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -323,14 +384,15 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           onChange={(e) => handleFileUpload(e.target.files)}
           className="hidden"
         />
-        
-        <InputBar 
-          onSendMessage={handleSendWithTimeCheck} 
+
+        <InputBar
+          onSendMessage={handleSendWithTimeCheck}
           isLoading={isLoading || editingMessageId !== null}
           onFileUpload={() => fileInputRef.current?.click()}
+          onStopGenerating={onStopGenerating}
         />
         <p className="text-center text-xs text-muted mt-2 px-2">
-            Druva can make mistakes. Consider checking important information.
+          Druva can make mistakes. Consider checking important information.
         </p>
       </div>
     </div>

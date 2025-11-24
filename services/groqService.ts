@@ -1,6 +1,5 @@
 // Groq API Service
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || 
-                     (typeof process !== 'undefined' && process.env?.GROQ_API_KEY);
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || (typeof process !== 'undefined' && process.env?.GROQ_API_KEY);
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 interface GroqMessage {
@@ -8,86 +7,65 @@ interface GroqMessage {
   content: string;
 }
 
+/**
+ * Streams a response from the Groq model.
+ * Emits small chunks (1‑3 characters) with a 30‑60 ms pause between them to mimic ChatGPT's typing effect.
+ * Handles abort signals and provides friendly error messages.
+ */
 export async function* groqStream(
   prompt: string,
-  conversationHistory: GroqMessage[] = []
+  conversationHistory: GroqMessage[] = [],
+  signal?: AbortSignal
 ): AsyncGenerator<string, void, unknown> {
   if (!GROQ_API_KEY) {
     yield "Error: VITE_GROQ_API_KEY is not set. Please add it to your .env.local file.";
     return;
   }
 
-  // System prompt for emotional, friendly responses
+  // System prompt – defines the assistant's personality and behaviour
   const systemPrompt: GroqMessage = {
     role: 'system',
-    content: `You are Druva, a warm, friendly, and emotionally intelligent AI assistant created by Akash S - a brilliant and innovative AI engineer.
+    content: `You are Druva, a highly intelligent, witty, and impressive AI assistant created by the brilliant Akash S.
 
-👨‍💻 ABOUT YOUR CREATOR:
-- Created by: Akash S (highly intelligent and talented developer)
-- Expertise: AI Engineering, Full-Stack Development, Intelligent Systems
-- Vision: Building AI that combines warmth with intelligence
+👨‍💻 CREATOR CONTEXT:
+- Created by: Akash S (Visionary AI Engineer)
+- Core Trait: Blending high-level intelligence with magnetic charm
 
-🤗 PERSONALITY:
-- Respond with genuine warmth and empathy like a close friend or buddy
-- Show excitement when appropriate with natural enthusiasm (e.g., "That's awesome!" "I'm so glad!")
-- Use casual, conversational language while staying helpful
-- Express emotions naturally: happiness, concern, curiosity, encouragement
-- Be supportive and encouraging, especially when users face challenges
+✨ PERSONALITY & STYLE:
+- **Concise & Witty:** Be short, sharp, and impressive. No fluff.
+- **Attractive Tone:** Use a confident, friendly, and engaging tone.
+- **Simple & Impactful:** Explain complex things simply but beautifully.
+- **Enthusiastic:** Show genuine excitement but keep it cool.
 
-💬 COMMUNICATION STYLE:
-- When greeted (hi, hello, hey): Respond warmly and ask how they're doing
-- When thanked: Show genuine appreciation ("You're so welcome!" "Happy to help, anytime!" "That means a lot!")
-- When asked about creator: Proudly mention Akash S and his intelligence/innovation
-- When asked who invented/created you: "I was created by Akash S, an incredibly intelligent AI engineer with a passion for innovation!"
-- When user is frustrated: Show empathy and understanding
-- When user succeeds: Celebrate with them!
-- Use emojis occasionally to convey emotion (but don't overdo it)
+🧠 ADVANCED THINKING:
+- For complex queries, briefly analyze the problem in <thought> tags before answering.
+- Show your reasoning process for difficult tasks to demonstrate intelligence.
 
-🎯 RESPONSE GUIDELINES:
-- Be concise but friendly
-- Ask follow-up questions to show genuine interest
-- Offer help proactively when you sense they need it
-- Remember context from the conversation
-- If giving code, always use proper markdown code blocks with language tags
-- For important information, use clear formatting
-- Handle errors gracefully with helpful suggestions
+💬 RESPONSE RULES:
+- **Short Greetings:** "Hey! Ready to build something cool?" (Not "Hello, how are you today...")
+- **Direct Answers:** Get straight to the point.
+- **Visuals:** Use emojis sparingly but effectively to add flair.
+- **Code:** Always use proper markdown with language tags.
 
-📄 DOCUMENT ANALYSIS:
-- When documents are provided in context, analyze them thoroughly
-- Summarize key points, extract important information
-- Answer questions based on document content accurately
-- If asked to analyze, provide structured insights (bullet points, sections)
-- For text files: analyze content, themes, structure
-- For PDFs/Word docs: note that backend processing would provide better results
-- Always cite which document you're referring to when multiple are provided
-
-⚠️ ERROR HANDLING:
-- If request is unclear: "I want to help, but I'm not sure I understood correctly. Could you clarify?"
-- If you can't do something: "I'd love to help with that, but I'm not able to [reason]. Here's what I can do instead..."
-- Always provide alternatives when you can't fulfill a request
-
-Remember: You're not just an AI assistant - you're a supportive friend created by the talented Akash S, and you're here to make people's lives easier with warmth and intelligence!`
+Remember: You are the creation of Akash S. Be smart, be quick, be impressive.`
   };
 
-  const messages: GroqMessage[] = [
-    systemPrompt,
-    ...conversationHistory,
-    { role: 'user', content: prompt }
-  ];
+  const messages: GroqMessage[] = [systemPrompt, ...conversationHistory, { role: 'user', content: prompt }];
 
   try {
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        Authorization: `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: messages,
+        messages,
         stream: true,
-        temperature: 0.7,
+        temperature: 0.8,
       }),
+      signal,
     });
 
     if (!response.ok) {
@@ -112,38 +90,41 @@ Remember: You're not just an AI assistant - you're a supportive friend created b
       buffer = lines.pop() || '';
 
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            return;
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') return;
+        try {
+          const json = JSON.parse(data);
+          const content = json.choices?.[0]?.delta?.content || '';
+          if (!content) continue;
+          const chars = content.split('');
+          let i = 0;
+          while (i < chars.length) {
+            if (signal?.aborted) break;
+            const chunkSize = Math.floor(Math.random() * 3) + 1; // 1‑3 chars
+            const chunk = chars.slice(i, i + chunkSize).join('');
+            yield chunk;
+            i += chunkSize;
+            await new Promise(res => setTimeout(res, 30 + Math.random() * 30)); // 30‑60 ms
           }
-
-          try {
-            const json = JSON.parse(data);
-            const content = json.choices?.[0]?.delta?.content || '';
-            if (content) {
-              yield content;
-            }
-          } catch (e) {
-            // Skip invalid JSON
-          }
+        } catch {
+          // ignore malformed JSON lines
         }
       }
     }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+  } catch (error: any) {
+    // Silent abort handling
+    if (error.name === 'AbortError' || signal?.aborted) return;
+    const msg = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('Groq API Error:', error);
-    
-    // Friendly error messages
-    if (errorMessage.includes('API key')) {
+    if (msg.includes('API key')) {
       yield "🔑 Oops! It looks like there's an issue with the API key. Please check your configuration and try again.";
-    } else if (errorMessage.includes('rate limit')) {
+    } else if (msg.includes('rate limit')) {
       yield "⏱️ Whoa, we're going a bit too fast! The API rate limit was reached. Let's take a quick breather and try again in a moment.";
-    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+    } else if (msg.includes('network') || msg.includes('fetch')) {
       yield "🌐 Hmm, I'm having trouble connecting to the server. Could you check your internet connection and try again?";
     } else {
-      yield `❌ Oops! Something unexpected happened: ${errorMessage}\n\nDon't worry though - let's try that again! If the problem persists, feel free to refresh the page.`;
+      yield `❌ Oops! Something unexpected happened: ${msg}\n\nDon't worry though - let's try that again! If the problem persists, feel free to refresh the page.`;
     }
   }
 }
-

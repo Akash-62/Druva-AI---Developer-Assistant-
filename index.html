@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Druva AI Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMmg9ikOAiqRT5bDLA+aCJqBPSa2GwOaBktUn5NWftDfsCzA2" crossorigin="anonymous">
@@ -50,6 +53,42 @@
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
       }
+
+      /* Safe area for mobile devices */
+      .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Smooth animations */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from { 
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to { 
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+      }
+      .animate-slideUp {
+        animation: slideUp 0.3s ease-out;
+      }
+
+      /* Prose styles for markdown */
+      .prose {
+        color: inherit;
+        max-width: none;
+      }
+      .prose code {
+        color: inherit;
+      }
     </style>
     <script>
       tailwind.config = {
@@ -68,7 +107,8 @@
             },
             animation: {
               'arc-pulse': 'arc-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'thinking-pulse': 'thinking-pulse 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite'
+              'thinking-pulse': 'thinking-pulse 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite',
+              'spin-slow': 'spin 2s linear infinite'
             },
             keyframes: {
               'arc-pulse': {
