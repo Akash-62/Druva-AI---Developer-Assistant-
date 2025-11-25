@@ -26,31 +26,6 @@ body {
 /* Safe area insets for notched devices */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* ========================================
-   CODE BLOCK SCROLLING FIXES
-   ======================================== */
-
-/* Prevent code blocks from expanding screen width */
-pre[class*="language-"],
-.prose pre,
-pre code {
-  max-width: 100% !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  white-space: pre !important;
-  word-wrap: normal !important;
-  word-break: normal !important;
-  -webkit-overflow-scrolling: touch;
-  contain: layout;
-  margin-bottom: 0 !important;
-}
-
-/* Ensure syntax highlighter respects container width */
-pre[class*="language-"]>code {
-  white-space: pre !important;
-  word-wrap: normal !important;
   display: block !important;
   min-width: max-content;
 }
@@ -133,26 +108,6 @@ div:has(> pre[class*="language-"]) {
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 1000 !important;
-    background: var(--color-bkg, #ffffff) !important;
-    border-top: 1px solid var(--color-border, #e5e7eb) !important;
-    padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem) !important;
-  }
-
-  /* Add padding to chat area to prevent content hiding behind input */
-  .flex-1.overflow-y-auto.overscroll-contain {
-    padding-bottom: 160px !important;
-  }
-
-  /* Remove extra padding from message containers */
-  .py-4.space-y-2 {
-    padding-bottom: 0 !important;
-  }
-
-  /* Adjust for keyboard visibility */
-  .flex.flex-col.h-full {
-    height: 100vh !important;
-    height: 100dvh !important;
   }
 }
 
