@@ -43,8 +43,8 @@ pre code {
   word-wrap: normal !important;
   word-break: normal !important;
   -webkit-overflow-scrolling: touch;
-  /* Prevent content from pushing viewport */
   contain: layout;
+  margin-bottom: 0 !important;
 }
 
 /* Ensure syntax highlighter respects container width */
@@ -67,6 +67,12 @@ div:has(> pre[class*="language-"]) {
 .my-4.rounded-lg.overflow-hidden {
   max-width: 100% !important;
   overflow: hidden !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Remove excessive spacing after code blocks */
+.my-4 {
+  margin-bottom: 1rem !important;
 }
 
 /* ========================================
@@ -130,18 +136,23 @@ div:has(> pre[class*="language-"]) {
     z-index: 1000 !important;
     background: var(--color-bkg, #ffffff) !important;
     border-top: 1px solid var(--color-border, #e5e7eb) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem) !important;
   }
 
   /* Add padding to chat area to prevent content hiding behind input */
   .flex-1.overflow-y-auto.overscroll-contain {
-    padding-bottom: 140px !important;
+    padding-bottom: 160px !important;
+  }
+
+  /* Remove extra padding from message containers */
+  .py-4.space-y-2 {
+    padding-bottom: 0 !important;
   }
 
   /* Adjust for keyboard visibility */
   .flex.flex-col.h-full {
     height: 100vh !important;
     height: 100dvh !important;
-    /* Dynamic viewport height */
   }
 }
 

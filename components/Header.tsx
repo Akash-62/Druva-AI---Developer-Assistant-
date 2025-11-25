@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MenuIcon, ArcReactorLogo, CogIcon, ShareIcon } from './Icons';
 import { useTheme } from '../hooks/useDarkMode';
 import { SunIcon, MoonIcon, SparklesIcon } from './Icons';
@@ -21,6 +21,32 @@ export const Header: React.FC<HeaderProps> = ({
   hasMessages = false
 }) => {
   const [theme, cycleTheme] = useTheme();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const chatArea = document.querySelector('.flex-1.overflow-y-auto');
+      if (!chatArea) return;
+
+      const currentScrollY = chatArea.scrollTop;
+
+      // Show header when scrolling up, hide when scrolling down
+      if (currentScrollY < lastScrollY || currentScrollY < 50) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    const chatArea = document.querySelector('.flex-1.overflow-y-auto');
+    if (chatArea) {
+      chatArea.addEventListener('scroll', handleScroll, { passive: true });
+      return () => chatArea.removeEventListener('scroll', handleScroll);
+    }
+  }, [lastScrollY]);
 
   const renderThemeIcon = () => {
     if (theme === 'light') return <MoonIcon className="w-6 h-6 text-muted" />;
@@ -29,7 +55,14 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="flex-shrink-0 flex items-center justify-between px-3 py-3 sm:px-4 sm:py-4 border-b border-border-color relative z-10">
+    <header
+      className={`flex-shrink-0 flex items-center justify-between px-3 py-3 sm:px-4 sm:py-4 border-b border-border-color sticky top-0 z-50 bg-bkg transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      style={{
+        backdropFilter: 'blur(10px)',
+        backgroundColor: 'var(--color-bkg)',
+      }}
+    >
       <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
         <button
           onClick={toggleSidebar}
