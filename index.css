@@ -83,11 +83,6 @@ div:has(> pre[class*="language-"]) {
     overflow-x: hidden;
   }
 
-  /* Input bar mobile fixes */
-  .max-w-4xl {
-    max-width: 100% !important;
-  }
-
   /* Prevent textarea from causing overflow */
   textarea {
     max-width: 100%;
@@ -95,19 +90,13 @@ div:has(> pre[class*="language-"]) {
   }
 }
 
-/* ========================================
-   KEYBOARD HANDLING (Mobile)
-   ======================================== */
-
-/* Ensure input stays visible when keyboard opens */
+/* Ensure proper height on mobile */
 @media (max-width: 768px) {
 
-  /* Fixed positioning for input container */
-  .px-3.py-3.sm\:p-4.border-t {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
+  /* Adjust for keyboard visibility */
+  .flex.flex-col.h-full {
+    height: 100vh !important;
+    height: 100dvh !important;
   }
 }
 
