@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { PlusIcon, XIcon, ArcReactorLogo, TrashIcon, MessageIcon } from './Icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { PlusIcon, XIcon, ArcReactorLogo, TrashIcon, MessageIcon, ThreeDotsIcon, ShareIcon } from './Icons';
 import { Conversation } from '../types';
 
 interface SidebarProps {
@@ -10,41 +10,73 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectConversation: (id: string) => void;
   onDeleteConversation: (id: string) => void;
+  onShareConversation: (id: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  isOpen, 
-  setIsOpen, 
-  conversations, 
-  activeConversationId, 
-  onNewChat, 
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  setIsOpen,
+  conversations,
+  activeConversationId,
+  onNewChat,
   onSelectConversation,
-  onDeleteConversation
+  onDeleteConversation,
+  onShareConversation
 }) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDeletingId(id);
+    setActiveDropdownId(null);
     setTimeout(() => {
       onDeleteConversation(id);
       setDeletingId(null);
     }, 300);
   };
 
+  const handleShare = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onShareConversation(id);
+    setActiveDropdownId(null);
+  };
+
+  const toggleDropdown = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveDropdownId(activeDropdownId === id ? null : id);
+  };
+
   return (
     <>
       {/* Overlay for mobile */}
-      <div 
+      <div
         onClick={() => setIsOpen(false)}
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        aria-label="Close sidebar overlay"
         aria-hidden="true"
       />
       <aside
-        className={`fixed lg:relative flex flex-col h-full bg-surface border-r border-border-color transition-all duration-300 ease-in-out z-50 lg:z-auto ${
-          isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:w-20 lg:translate-x-0'
-        }`}
+        className={`fixed lg:relative flex flex-col h-full bg-surface border-r border-border-color transition-all duration-300 ease-in-out z-50 lg:z-auto ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:w-20 lg:translate-x-0'
+          }`}
       >
         <div className={`flex items-center p-4 border-b border-border-color ${isOpen ? 'justify-between' : 'justify-center'}`}>
           {isOpen && (
@@ -59,11 +91,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="p-2">
-          <button 
+          <button
             onClick={onNewChat}
             className={`w-full flex items-center gap-3 p-3 rounded-lg bg-cyan-accent text-white hover:bg-cyan-600 transition-all duration-200 shadow-md hover:shadow-lg ${isOpen ? '' : 'justify-center'}`}
             aria-label="Start new chat"
-            >
+          >
             <PlusIcon className="w-5 h-5 flex-shrink-0" />
             {isOpen && <span className="font-semibold">New Chat</span>}
           </button>
@@ -76,13 +108,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {conversations.map((conv) => (
             <div
               key={conv.id}
-              className={`group relative flex items-center rounded-lg transition-all duration-300 ${
-                deletingId === conv.id ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-              } ${
-                conv.id === activeConversationId 
-                ? 'bg-surface-hover' 
-                : 'hover:bg-surface-hover'
-              }`}
+              className={`group relative flex items-center rounded-lg transition-all duration-300 ${deletingId === conv.id ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                } ${conv.id === activeConversationId
+                  ? 'bg-surface-hover'
+                  : 'hover:bg-surface-hover'
+                }`}
             >
               <a
                 href="#"
@@ -95,26 +125,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 aria-label={`Select chat: ${conv.title}`}
                 aria-current={conv.id === activeConversationId ? 'page' : undefined}
-                className={`flex items-center gap-3 p-3 rounded-lg text-sm truncate flex-1 ${
-                  isOpen ? '' : 'justify-center'
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-lg text-sm truncate flex-1 ${isOpen ? '' : 'justify-center'
+                  }`}
               >
                 <MessageIcon className="w-4 h-4 flex-shrink-0 text-muted" />
                 {isOpen && <span className="truncate">{conv.title}</span>}
               </a>
+
               {isOpen && (
-                <button
-                  onClick={(e) => handleDelete(conv.id, e)}
-                  className="opacity-0 group-hover:opacity-100 p-2 mr-2 rounded-md hover:bg-red-500/20 text-muted hover:text-red-500 transition-all duration-200"
-                  aria-label="Delete conversation"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={(e) => toggleDropdown(conv.id, e)}
+                    className={`p-2 mr-2 rounded-md hover:bg-surface-hover text-muted transition-all duration-200 ${activeDropdownId === conv.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    aria-label="Conversation options"
+                  >
+                    <ThreeDotsIcon className="w-4 h-4" />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {activeDropdownId === conv.id && (
+                    <div
+                      ref={dropdownRef}
+                      className="absolute right-0 top-full mt-1 w-48 bg-surface border border-border-color rounded-lg shadow-xl z-50 overflow-hidden animate-fadeIn"
+                    >
+                      <button
+                        onClick={(e) => handleShare(conv.id, e)}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-text-primary hover:bg-surface-hover transition-colors"
+                      >
+                        <ShareIcon className="w-4 h-4" />
+                        Share Conversation
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(conv.id, e)}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-colors border-t border-border-color"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                        Delete Conversation
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ))}
         </nav>
-        
+
         {isOpen && (
           <div className="p-4 border-t border-border-color">
             <div className="text-xs text-muted text-center">

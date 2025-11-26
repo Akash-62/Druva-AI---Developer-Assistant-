@@ -63,7 +63,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ file: File, content: string, status: 'processing' | 'ready' | 'error' }>>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extract text from file
@@ -234,21 +234,31 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     handleFileUpload(e.dataTransfer.files);
   };
 
-  // Handle keyboard visibility for mobile (input stays above keyboard)
+  // Handle scroll to show/hide button
   useEffect(() => {
-    const handleResize = () => {
-      if (typeof window !== 'undefined' && window.visualViewport) {
-        const viewport = window.visualViewport;
-        const keyboardOffset = window.innerHeight - viewport.height;
-        setKeyboardHeight(keyboardOffset > 0 ? keyboardOffset : 0);
+    const handleScroll = () => {
+      if (scrollRef.current) {
+        setShowScrollTop(scrollRef.current.scrollTop > 300);
       }
     };
 
-    if (typeof window !== 'undefined' && window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
-      return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    const scrollContainer = scrollRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
     }
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, []);
+
+  const scrollToTop = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -290,11 +300,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
   return (
     <div
-      className="flex flex-col h-full"
+      className="flex flex-col h-full relative"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      style={{ paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0' }}
     >
       {/* Drag and Drop Overlay */}
       {isDragging && (
@@ -309,7 +318,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overscroll-contain"
+        className="flex-1 overflow-y-auto overscroll-contain relative"
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollBehavior: 'smooth'
@@ -319,6 +328,19 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           {messages.length === 0 && !isLoading ? <WelcomeScreen /> : renderMessages()}
         </div>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="absolute bottom-24 right-6 p-2 bg-surface border border-border-color rounded-full shadow-lg hover:bg-surface-hover transition-all duration-300 z-20 animate-fadeIn"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-5 h-5 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+      )}
 
       <div
         className="px-3 py-3 sm:p-4 border-t border-border-color bg-bkg safe-area-bottom"

@@ -172,3 +172,9 @@ export const StopIcon: React.FC<{ className?: string }> = ({ className }) => (
     <rect x="6" y="6" width="12" height="12" rx="2" />
   </svg>
 );
+
+export const ThreeDotsIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+  </svg>
+);

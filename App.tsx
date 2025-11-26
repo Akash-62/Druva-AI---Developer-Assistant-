@@ -104,6 +104,11 @@ const App: React.FC = () => {
     setEditingMessageId(null);
   }, [activeConversationId]);
 
+  const handleShareConversation = (id: string) => {
+    setActiveConversationId(id);
+    setIsShareModalOpen(true);
+  };
+
   const handleStopGenerating = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -411,6 +416,7 @@ const App: React.FC = () => {
         onNewChat={handleNewChat}
         onSelectConversation={handleSelectConversation}
         onDeleteConversation={handleDeleteConversation}
+        onShareConversation={handleShareConversation}
       />
 
       <div className="flex flex-col flex-1 relative">
