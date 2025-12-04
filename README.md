@@ -44,8 +44,7 @@
 ### 🎯 **Advanced Features**
 - 🕐 **Live Date & Time**: Real-time clock with Indian Standard Time
 - 👨‍💻 **Developer Info**: Connect with the creator (Akash S)
-- 🎙️ **Voice Mode**: Speech recognition (Coming Soon)
-- 📄 **Document Analysis**: Upload and analyze files (Coming Soon)
+- 🎙️ **Voice Recognition**: Speech-to-text input for hands-free messaging
 - ⚠️ **Smart Error Handling**: Friendly, helpful error messages
 - 💾 **LocalStorage Persistence**: Your chats stay even after refresh
 

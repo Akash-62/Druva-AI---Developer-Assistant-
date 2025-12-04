@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { SendIcon, PaperclipIcon, MicrophoneIcon, StopIcon } from './Icons';
+import { SendIcon, MicrophoneIcon, StopIcon } from './Icons';
 
 // Extend Window interface for Speech Recognition
 declare global {
@@ -12,11 +12,10 @@ declare global {
 interface InputBarProps {
   onSendMessage: (text: string) => void;
   isLoading: boolean;
-  onFileUpload?: () => void;
   onStopGenerating?: () => void;
 }
 
-export const InputBar: React.FC<InputBarProps> = ({ onSendMessage, isLoading, onFileUpload, onStopGenerating }) => {
+export const InputBar: React.FC<InputBarProps> = ({ onSendMessage, isLoading, onStopGenerating }) => {
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -109,14 +108,6 @@ export const InputBar: React.FC<InputBarProps> = ({ onSendMessage, isLoading, on
   return (
     <div className="max-w-4xl mx-auto w-full px-2 sm:px-0">
       <div className="relative flex items-center bg-surface rounded-2xl shadow-sm border border-border-color focus-within:ring-2 focus-within:ring-cyan-accent">
-        <button
-          onClick={onFileUpload}
-          className="p-2 sm:p-3 text-muted hover:text-cyan-accent flex-shrink-0 transition-colors"
-          aria-label="Attach file"
-          type="button"
-        >
-          <PaperclipIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
         <textarea
           ref={textareaRef}
           value={text}
@@ -124,7 +115,7 @@ export const InputBar: React.FC<InputBarProps> = ({ onSendMessage, isLoading, on
           onKeyDown={handleKeyDown}
           rows={1}
           placeholder="Message Druva..."
-          className="w-full max-h-48 resize-none bg-transparent focus:outline-none p-3 pr-20 sm:pr-24 text-sm sm:text-base text-text-primary"
+          className="w-full max-h-48 resize-none bg-transparent focus:outline-none p-3 pl-4 pr-20 sm:pr-24 text-sm sm:text-base text-text-primary"
           disabled={isLoading}
           aria-label="Chat input"
         />
